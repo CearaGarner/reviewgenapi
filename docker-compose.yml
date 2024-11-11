@@ -1,0 +1,37 @@
+﻿version: "3.9"
+
+services:
+  reviewgen.api:
+    image: reviewgen.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/devcerts.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=qwerty
+    volumes:
+      - ~/.aspnet/https:/https
+    build:
+      context: .
+      dockerfile: ReviewGen.API/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      
+  reviewgen.client:
+    image: reviewgen.client
+    container_name: reviewgen.client
+    depends_on:
+      reviewgen.api:
+        condition: service_healthy
+    build:
+      context: Client/reviewgen/
+      dockerfile: Dockerfile
+    ports:
+      - "4040:4040"
